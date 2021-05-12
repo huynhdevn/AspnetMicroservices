@@ -9,12 +9,25 @@ services:
     volumes: 
       - mongo_data:/data/db
 
-  catalog.api:
-    container_name: catalog.api
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - "DatabaseSettings:ConnectionString=mongodb://catalogdb:27017"
-    depends_on:
-      - catalogdb
+  basketdb:
+    container_name: basketdb
+    restart: always
     ports:
-      - "8000:80"
+      - "6379:6379"
+
+  orderdb:
+    container_name: orderdb
+    environment:
+      SA_PASSWORD: "SwN12345678"
+      ACCEPT_EULA: "Y"
+    restart: always
+    ports:
+      - "1433:1433"
+
+  rabitmq:
+    container_name: rabitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
