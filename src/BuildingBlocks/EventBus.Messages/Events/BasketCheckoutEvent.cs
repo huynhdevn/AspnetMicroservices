@@ -1,11 +1,10 @@
-﻿namespace Ordering.Application.Features.Orders.Queries.GetOrderList
+﻿namespace EventBus.Messages.Events
 {
-    public class OrderVm
+    public class BasketCheckoutEvent : IntegrationBaseEvent
     {
-        public int Id { get; protected set; }
         public string UserName { get; set; }
         public decimal TotalPrice { get; set; }
-        
+
         // Billing Address
         public string FirstName { get; set; }
         public string LastName { get; set; }

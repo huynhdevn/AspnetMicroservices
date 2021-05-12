@@ -1,11 +1,10 @@
-﻿namespace Ordering.Application.Features.Orders.Queries.GetOrderList
+﻿namespace Basket.API.Entities
 {
-    public class OrderVm
+    public class BasketCheckout
     {
-        public int Id { get; protected set; }
         public string UserName { get; set; }
         public decimal TotalPrice { get; set; }
-        
+
         // Billing Address
         public string FirstName { get; set; }
         public string LastName { get; set; }

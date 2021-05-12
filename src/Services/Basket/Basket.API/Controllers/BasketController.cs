@@ -1,10 +1,11 @@
-﻿using Basket.API.Entities;
+﻿using AutoMapper;
+using Basket.API.Entities;
 using Basket.API.GrpcServices;
 using Basket.API.Repositories;
+using EventBus.Messages.Events;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Basket.API.Controllers
@@ -13,19 +14,24 @@ namespace Basket.API.Controllers
     [Route("api/v1/[controller]")]
     public class BasketController : ControllerBase
     {
-        private readonly IBasketRepository _repository;
+        private readonly IBasketRepository _basketRepo;
         private readonly DiscountGrpcService _discountGrpcService;
+        private readonly IMapper _mapper;
+        private readonly IPublishEndpoint _publishEnpoint;
 
-        public BasketController(IBasketRepository repository, DiscountGrpcService discountGrpcService)
+        public BasketController(IBasketRepository basketRepo, DiscountGrpcService discountGrpcService, 
+            IMapper mapper, IPublishEndpoint publishEnpoint)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _basketRepo = basketRepo ?? throw new ArgumentNullException(nameof(basketRepo));
             _discountGrpcService = discountGrpcService ?? throw new ArgumentNullException(nameof(discountGrpcService));
+            _mapper = mapper;
+            _publishEnpoint = publishEnpoint;
         }
 
         [HttpGet("{username}")]
         public async Task<ShoppingCart> GetBasket(string username)
         {
-            var basket = await _repository.GetBasket(username);
+            var basket = await _basketRepo.GetBasket(username);
 
             return basket ?? new ShoppingCart(username);
         }
@@ -40,15 +46,35 @@ namespace Basket.API.Controllers
                 item.Price -= coupon.Amount;
             }    
 
-            return await _repository.UpdateBasket(basket);
+            return await _basketRepo.UpdateBasket(basket);
         }
 
         [HttpDelete("{username}")]
         public async Task<IActionResult> DeleteBasket(string username)
         {
-            await _repository.DeleteBasket(username);
+            await _basketRepo.DeleteBasket(username);
                 
             return Ok();
+        }
+
+        /* get existing basket with total price
+         * create basketCheckoutEvent -- Set TotalPrice on basketCheckout eventMessage
+         * send checkout event to rabitmq
+         * remove the basket */
+        [HttpPost("[action]")]
+        public async Task<IActionResult> Checkout(BasketCheckout basketCheckout)
+        {
+            var basket = await _basketRepo.GetBasket(basketCheckout.UserName);
+
+            if (basket == null) return BadRequest();
+
+            var eventMessage = _mapper.Map<BasketCheckoutEvent>(basketCheckout);
+            eventMessage.TotalPrice = basket.TotalPrice;
+            await _publishEnpoint.Publish(eventMessage);
+
+            await _basketRepo.DeleteBasket(basketCheckout.UserName);
+
+            return Accepted();
         }
     }
 }

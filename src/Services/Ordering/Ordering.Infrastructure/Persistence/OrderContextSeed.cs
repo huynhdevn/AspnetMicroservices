@@ -28,7 +28,7 @@ namespace Ordering.Infrastructure.Persistence
                     UserName = "swn",
                     FirstName = "Duoc",
                     LastName = "Huynh",
-                    Email = "huynhdev@hotmail.com",
+                    EmailAddress = "huynhdev@hotmail.com",
                     AddressLine = "hqc plaza",
                     Country = "Vietnam",
                     TotalPrice = 350
